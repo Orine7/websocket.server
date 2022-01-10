@@ -18,23 +18,47 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private logger: Logger = new Logger('PlayerGateway');
 
   @SubscribeMessage('startTimer')
-  async handleStart(sender: Socket): Promise<void> {
-    sender.broadcast.emit('timerStarted', sender.id);
+  async handleStart(sender: Socket, room: string): Promise<void> {
+    sender.broadcast.to(room).emit('timerStarted', sender.id);
   }
 
   @SubscribeMessage('resumeTimer')
-  handleResume(client: Socket): void {
-    client.broadcast.emit('timerResumed', client.id);
+  handleResume(client: Socket, room: string): void {
+    client.broadcast.to(room).emit('timerResumed', client.id);
   }
 
   @SubscribeMessage('resetTimer')
-  handleReset(client: Socket): void {
-    client.broadcast.emit('timerReseted', client.id);
+  handleReset(client: Socket, room: string): void {
+    client.broadcast.to(room).emit('timerReseted', client.id);
   }
 
   @SubscribeMessage('pauseTimer')
-  handlePause(client: Socket): void {
-    client.broadcast.emit('timerPaused', client.id);
+  handlePause(client: Socket, room: string): void {
+    client.broadcast.to(room).emit('timerPaused', client.id);
+  }
+
+  @SubscribeMessage('sync')
+  syncMessage(client: Socket, data: string): void {
+    client.broadcast.emit('syncing', data);
+  }
+
+  @SubscribeMessage('createRoom')
+  createRoom(client: Socket, room: string): void {
+    client.emit('roomCreated', room);
+    client.join(room);
+    client.emit('roomJoined', room);
+  }
+
+  @SubscribeMessage('joinRoom')
+  joinRoom(client: Socket, room: string): void {
+    client.join(room);
+    client.emit('roomJoined', room);
+  }
+
+  @SubscribeMessage('leaveRoom')
+  leaveRoom(client: Socket, room: string): void {
+    client.leave(room);
+    client.emit('roomLeaved', room);
   }
 
   handleConnection(client: Socket) {
